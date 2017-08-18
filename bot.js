@@ -101,40 +101,106 @@ var BOT_INTERFACES = {};
 
 class Interface extends Object
 {
-	constructor(name,sheet_id,type,range)
+	constructor(name,chat_id,sheet_id,type,range)
 	{
+		super();
 		this.name = name;
+		this.chat_id = chat_id;
 		this.sheet_id = sheet_id;
 		this.type = type;
 		this.range = range;
 	}
-	static add(name,chat_id,sheet_id,type,range)
+	add()
 	{
-		if (!(chat_id in BOT_INTERFACES))
+		if (!(this.chat_id in BOT_INTERFACES))
 		{
-			BOT_INTERFACES[chat_id]={};
-			if (!(name in BOT_INTERFACES[chat_id]))
-			{
-				BOT_INTERFACES[chat_id][name]={};
-			}
-		}
+			BOT_INTERFACES[this.chat_id]={};
 
-		BOT_INTERFACES[chat_id][name].sheet_id=sheet_id;
-		BOT_INTERFACES[chat_id][name].type=type;
-		BOT_INTERFACES[chat_id][name].range=range;
+		}
+		if (!(this.name in BOT_INTERFACES[this.chat_id]))
+		{
+			BOT_INTERFACES[this.chat_id][this.name]={};
+		}
+		BOT_INTERFACES[this.chat_id][this.name].sheet_id=this.sheet_id;
+		BOT_INTERFACES[this.chat_id][this.name].type=this.type;
+		BOT_INTERFACES[this.chat_id][this.name].range=this.range;
 
 	}
-	static remove(name,chat_id)
+	remove()
 	{
-		if (chat_id in BOT_INTERFACES)
+		if (this.chat_id in BOT_INTERFACES)
 		{
 
-			if (name in BOT_INTERFACES[chat_id])
+			if (this.name in BOT_INTERFACES[this.chat_id])
 			{
-				delete BOT_INTERFACES[chat_id][name];
+				delete BOT_INTERFACES[this.chat_id][this.name];
 			}
 		}
 	}
+	get_data(resolve)
+	{
+		var d = new Dataset(this.sheet_id,this.type,this.range);
+		var p = new Promise(
+			function(resolve, reject) {
+				d.update(resolve);
+			});
+
+		p.then(
+
+			function(val) {
+				if (typeof resolve === "function")
+				{
+					resolve(val);
+				}
+			});
+	}
+}
+
+class Dataset extends Object
+{
+	constructor(sheet_id,type,range)
+	{
+		super();
+		this.sheet_id=sheet_id;
+		this.type=type;
+		this.range=range;
+		this.updated=false;
+	}
+	update(resolve)
+	{
+		var sheet_id = this.sheet_id;
+		var range = this.range;
+		var obj=this;
+		fs.readFile('client_secret.json', function processClientSecrets(err, content) {
+			if (err) {
+				console.log('Error loading client secret file: ' + err);
+				return;
+			}
+  			// Authorize a client with the loaded credentials, then call the
+  			// Google Sheets API.
+  			authorize(JSON.parse(content),
+  				function retrieve(auth)
+  				{
+  					var sheets = google.sheets('v4');
+
+  					sheets.spreadsheets.values.get({
+  						auth: auth,
+  						spreadsheetId: sheet_id,
+  						range: range,
+  					}, function(err, response) {
+  						if (err) {
+  							console.log('The API returned an error: ' + err);
+  							return;
+  						}
+
+  						obj.data = response.values;
+  						resolve(obj.data);
+
+  					});
+  				});
+  		});
+	}
+
 }
 
 fs.readFile(BOT_CONFIG_PATH, function(err, config) {
@@ -171,6 +237,7 @@ function init_bot(token)
 	{
 		console.log("MongoDB info not found on "+BOT_CONFIG_PATH);
 	}
+
 }
 
 function bot_commands(bot)
