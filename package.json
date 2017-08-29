@@ -14,6 +14,9 @@
     "googleapis": "^19.0.0",
     "jsonfile": "^3.0.0",
     "mongodb": "^2.2.26",
-    "node-telegram-bot-api": "^0.27.0"
+    "node-telegram-bot-api": "^0.27.0",
+    "tableify": "^1.1.0",
+    "text-table": "^0.2.0",
+    "webshot": "^0.18.0"
   }
 }
