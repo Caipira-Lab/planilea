@@ -104,14 +104,15 @@ var BOT_INTERFACES = {};
 
 class Interface extends Object
 {
-	constructor(name,chat_id,sheet_id,type,range)
+	constructor(name,chat_id,sheet_id,format,range,standard=null)
 	{
 		super();
 		this.name = name;
 		this.chat_id = chat_id;
 		this.sheet_id = sheet_id;
-		this.type = type;
+		this.format = format;
 		this.range = range;
+		this.standard = standard;
 	}
 	add()
 	{
@@ -123,10 +124,19 @@ class Interface extends Object
 		if (!(this.name in BOT_INTERFACES[this.chat_id]))
 		{
 			BOT_INTERFACES[this.chat_id][this.name]={};
+			BOT_INTERFACES[this.chat_id][this.name].sheet_id=this.sheet_id;
+			BOT_INTERFACES[this.chat_id][this.name].format=this.format;
+			BOT_INTERFACES[this.chat_id][this.name].range=this.range;
+			if (this.standard === null)
+			{
+				BOT_INTERFACES[this.chat_id].standard = this.name;
+			}
 		}
-		BOT_INTERFACES[this.chat_id][this.name].sheet_id=this.sheet_id;
-		BOT_INTERFACES[this.chat_id][this.name].type=this.type;
-		BOT_INTERFACES[this.chat_id][this.name].range=this.range;
+		else
+		{
+			bot.sendMessage(this.chat_id,"Interface "+this.name+" ja existe.");
+		}
+
 
 	}
 	remove()
@@ -140,9 +150,20 @@ class Interface extends Object
 			}
 		}
 	}
+	static get(chat_id,name)
+	{
+		if (chat_id in BOT_INTERFACES)
+		{
+
+			if (name in BOT_INTERFACES[chat_id])
+			{
+				return new Interface(name,chat_id,BOT_INTERFACES[chat_id][name].sheet_id,BOT_INTERFACES[chat_id][name].format,BOT_INTERFACES[chat_id][name].range,BOT_INTERFACES[chat_id].standard);
+			}
+		}
+	}
 	get_data(resolve)
 	{
-		var d = new Dataset(this.sheet_id,this.type,this.range);
+		var d = new Dataset(this.sheet_id,this.format,this.range);
 		var p = new Promise(
 			function(resolve, reject) {
 				d.update(resolve);
@@ -157,15 +178,70 @@ class Interface extends Object
 				}
 			});
 	}
+	test_data()
+	{
+		var chat_id = this.chat_id;
+
+		this.get_data(function(val)
+		{
+			if (val === null)
+			{
+				bot.sendMessage(chat_id,"Erro na planilha");
+			}
+		});
+	}
+	send_data()
+	{
+		var chat_id = this.chat_id;
+		var format = this.format;
+
+		this.get_data(function(val)
+		{
+			var f = new Format(val,{format:format});
+			var buffer=[];
+
+			if (format === INTERFACE_INFO)
+			{
+				bot.sendMessage(chat_id,f.result,{parse_mode:"markdown"});
+			}
+			else
+			{
+
+
+				var options =
+				{
+					siteType:'html',
+					screenSize:{
+						height: 100
+					},
+					shotSize:
+					{
+						height: 'all'
+					}
+
+				}
+
+				var renderStream = webshot(f.result,null,options);
+
+				renderStream.on('data', function(data) {
+					buffer.push(data);
+				});
+
+				renderStream.on('end', function() {
+					bot.sendPhoto(chat_id,Buffer.concat(buffer));
+				});
+			}
+		});
+	}
 }
 
 class Dataset extends Object
 {
-	constructor(sheet_id,type,range)
+	constructor(sheet_id,format,range)
 	{
 		super();
 		this.sheet_id=sheet_id;
-		this.type=type;
+		this.format=format;
 		this.range=range;
 		this.updated=false;
 	}
