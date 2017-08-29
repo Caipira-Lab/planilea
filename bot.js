@@ -4,6 +4,9 @@ var readline = require('readline');
 var google = require('googleapis');
 var googleAuth = require('google-auth-library');
 var jsonfile = require('jsonfile');
+var table = require('text-table');
+var tableify = require('tableify');
+var webshot = require('webshot');
 
 var MongoClient = require('mongodb').MongoClient;
 
