@@ -205,7 +205,35 @@ class Dataset extends Object
 	}
 
 }
+class Format extends String
+{
+	constructor(dataset,options)
+	{
+		super();
+		this.dataset = dataset;
+		this.options = options;
+		this.result = this.format();
 
+	}
+	format()
+	{
+		if (this.options.format === INTERFACE_INFO)
+		{
+			var result=table(this.dataset,{hsep:" | "});
+			return "```\n"+result+"\n```";
+		}
+		else
+		{
+			var result=tableify(this.dataset);
+			var css = "";
+			this.height=(this.dataset.length*20)+20;
+			css = "<style>table{width:100%;font-family:monospace}table tr:first-child{background-color:gray;color:#fff;font-weight:700}tr:nth-child(even){background-color:#d3d3d3}</style>";
+
+			return css+result;
+		}
+
+	}
+}
 fs.readFile(BOT_CONFIG_PATH, function(err, config) {
 	if (err) {
 		console.log(err);
