@@ -353,4 +353,52 @@ function bot_commands(bot)
 		var chatId = msg.chat.id;
 		bot.sendMessage(chatId, "ID do chat: "+chatId);
 	});
+	bot.onText(/\/add (.*)/, function (msg, match) {
+		var chatId = msg.chat.id;
+		var standard = null;
+		if (chatId in BOT_INTERFACES)
+		{
+			standard = BOT_INTERFACES[chatId].standard;
+		}
+		explode = match[1].split(" ");
+		var inter = new Interface(explode[0],chatId,explode[1],parseInt(explode[2].replace("TABLE",INTERFACE_TABLE).replace("INFO",INTERFACE_INFO)),explode[3],standard);
+		inter.add();
+
+		inter.test_data();
+	});
+	bot.onText(/\/list$/, function (msg, match) {
+		var chatId = msg.chat.id;
+
+		if (chatId in BOT_INTERFACES)
+		{
+			var i = Interface.get(chatId,BOT_INTERFACES[chatId].standard);
+			i.send_data();
+		}
+	});
+	bot.onText(/\/list (.*)/, function (msg, match) {
+		var chatId = msg.chat.id;
+		if (chatId in BOT_INTERFACES)
+		{
+			if (match[1] in BOT_INTERFACES[chatId])
+			{
+				var i = Interface.get(chatId,match[1]);
+				i.send_data();
+			}
+		}
+	});
+	bot.onText(/\/set (.*)/, function (msg, match) {
+		var chatId = msg.chat.id;
+		if (chatId in BOT_INTERFACES)
+		{
+			explode = match[1].split(" ");
+			if (explode[0] === "standard")
+			{
+				if (explode[1] in BOT_INTERFACES[chatId])
+				{
+					BOT_INTERFACES[chatId].standard = explode[1];
+					bot.sendMessage(chatId,"Planilha padrão para esse chat agora é "+explode[1]);
+				}
+			}
+		}
+	});
 }
